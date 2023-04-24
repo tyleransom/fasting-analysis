@@ -82,6 +82,7 @@ adf.test(all$sleep_adj,   k=1) %>% print
 #-------------------------------------------------------------------------------
 # create some variables for later analysis
 #-------------------------------------------------------------------------------
+all %<>% mutate(long_fast     = cumul_dur_dec>=36)
 all %<>% mutate(long_fast_adj = fasting_adj>=10)
 
 
@@ -106,15 +107,34 @@ fit <- lm(weight_adj ~ lag(weight_adj)    + lag(weight_adj,2)    + lag(weight_ad
                        lag(ate_pizza)     + lag(ate_pizza,2)     + lag(ate_pizza,3)     + lag(ate_pizza,4)     + lag(ate_pizza,5)     + lag(ate_pizza,6)     + lag(ate_pizza,7)     , data=all %>% filter(date >= as_date('2022-07-24')))
 summary(fit)
 
-fit <- all %>% model(
-                     ARIMA(
-                           weight_adj ~ lag(weight_adj)    + lag(weight_adj,2)    + lag(weight_adj,3)    + lag(weight_adj,4)    + lag(weight_adj,5)    + lag(weight_adj,6)    + lag(weight_adj,7)    + 
-                                        lag(steps_adj)     + lag(steps_adj,2)     + lag(steps_adj,3)     + lag(steps_adj,4)     + lag(steps_adj,5)     + lag(steps_adj,6)     + lag(steps_adj,7)     + 
-                                        lag(sleep_adj)     + lag(sleep_adj,2)     + lag(sleep_adj,3)     + lag(sleep_adj,4)     + lag(sleep_adj,5)     + lag(sleep_adj,6)     + lag(sleep_adj,7)     +            
-                                        lag(fasting_adj)   + lag(fasting_adj,2)   + lag(fasting_adj,3)   + lag(fasting_adj,4)   + lag(fasting_adj,5)   + lag(fasting_adj,6)   + lag(fasting_adj,7)   +
-                                        lag(long_fast_adj) + lag(long_fast_adj,2) + lag(long_fast_adj,3) + lag(long_fast_adj,4) + lag(long_fast_adj,5) + lag(long_fast_adj,6) + lag(long_fast_adj,7) +
-                                        lag(traveling)     + lag(traveling,2)     + lag(traveling,3)     + lag(traveling,4)     + lag(traveling,5)     + lag(traveling,6)     + lag(traveling,7)     +
-                                        lag(ate_pizza)     + lag(ate_pizza,2)     + lag(ate_pizza,3)     + lag(ate_pizza,4)     + lag(ate_pizza,5)     + lag(ate_pizza,6)     + lag(ate_pizza,7)     
-                          )
-                    )
+fit <- all %>% 
+       model(
+             ARIMA(
+                   weight_adj ~ lag(weight_adj)    + lag(weight_adj,2)    + lag(weight_adj,3)    + lag(weight_adj,4)    + lag(weight_adj,5)    + lag(weight_adj,6)    + lag(weight_adj,7)    + 
+                                lag(steps_adj)     + lag(steps_adj,2)     + lag(steps_adj,3)     + lag(steps_adj,4)     + lag(steps_adj,5)     + lag(steps_adj,6)     + lag(steps_adj,7)     + 
+                                lag(sleep_adj)     + lag(sleep_adj,2)     + lag(sleep_adj,3)     + lag(sleep_adj,4)     + lag(sleep_adj,5)     + lag(sleep_adj,6)     + lag(sleep_adj,7)     +            
+                                lag(fasting_adj)   + lag(fasting_adj,2)   + lag(fasting_adj,3)   + lag(fasting_adj,4)   + lag(fasting_adj,5)   + lag(fasting_adj,6)   + lag(fasting_adj,7)   +
+                                lag(long_fast_adj) + lag(long_fast_adj,2) + lag(long_fast_adj,3) + lag(long_fast_adj,4) + lag(long_fast_adj,5) + lag(long_fast_adj,6) + lag(long_fast_adj,7) +
+                                lag(traveling)     + lag(traveling,2)     + lag(traveling,3)     + lag(traveling,4)     + lag(traveling,5)     + lag(traveling,6)     + lag(traveling,7)     +
+                                lag(ate_pizza)     + lag(ate_pizza,2)     + lag(ate_pizza,3)     + lag(ate_pizza,4)     + lag(ate_pizza,5)     + lag(ate_pizza,6)     + lag(ate_pizza,7)     
+                  )
+            )
 report(fit)
+
+#-------------------------------------------------------------------------------
+# forecasting
+#-------------------------------------------------------------------------------
+my_dcmp_spec <- decomposition_model(
+  STL(weight ~ season(window = Inf)),
+  ETS(season_adjust ~ season("N")), SNAIVE(season_year)
+)
+
+all %>%
+  filter(date < as_date('2022-07-24')) %>% 
+  model(my_dcmp_spec) %>% 
+  forecast(h="8 months") %>% 
+  autoplot(all) + 
+  theme_minimal() + 
+  xlab("Calendar date") +
+  ylab("Weight")
+ggsave('../exhibits/figures/weight_forecast.png', width = 7, height = 7)
