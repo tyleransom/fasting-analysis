@@ -5,6 +5,79 @@ library(tsibble)
 library(fable)
 library(feasts)
 
+load('../data/cleaned/monthly_fitbit.rda')
+
+# get BMI
+all_monthly %<>% mutate(bmi = weight * 0.453592 / (1.8^2))
+
+#-------------------------------------------------------------------------------
+# raw monthly averages of key outcomes
+#-------------------------------------------------------------------------------
+weight_plot <- all_monthly %>%
+  ggplot(aes(x = yearmonth, y = weight)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = as.numeric(ymd("2022-07-01")), 
+             color = "red", linetype = "dashed") +
+  labs(title = "Average Monthly Weight Over Time",
+       x = "Date",
+       y = "Weight (lbs)") +
+  theme_minimal() +
+  scale_x_yearmonth(date_breaks = "6 months", date_labels = "%b %Y")
+ggsave('../exhibits/figures/raw_weight.png', width = 7, height = 5)
+
+bmi_plot <- all_monthly %>%
+  ggplot(aes(x = yearmonth, y = bmi)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = as.numeric(ymd("2022-07-01")), 
+             color = "red", linetype = "dashed") +
+  labs(title = "Average Monthly BMI Over Time",
+       x = "Date",
+       y = "Body Mass Index") +
+  theme_minimal() +
+  scale_x_yearmonth(date_breaks = "6 months", date_labels = "%b %Y")
+ggsave('../exhibits/figures/raw_bmi.png', width = 7, height = 5)
+
+steps_plot <- all_monthly %>%
+  ggplot(aes(x = yearmonth, y = steps)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = as.numeric(ymd("2022-07-01")), 
+             color = "red", linetype = "dashed") +
+  labs(title = "Average Monthly 'Steps Per Day' Over Time",
+       x = "Date",
+       y = "Steps") +
+  theme_minimal() +
+  scale_x_yearmonth(date_breaks = "6 months", date_labels = "%b %Y")
+ggsave('../exhibits/figures/raw_steps.png', width = 7, height = 5)
+
+sleep_plot <- all_monthly %>%
+  ggplot(aes(x = yearmonth, y = sleephrs)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = as.numeric(ymd("2022-07-01")), 
+             color = "red", linetype = "dashed") +
+  labs(title = "Average Monthly 'Hours of Sleep Per Night' Over Time",
+       x = "Date",
+       y = "Sleep (Hours)") +
+  theme_minimal() +
+  scale_x_yearmonth(date_breaks = "6 months", date_labels = "%b %Y")
+ggsave('../exhibits/figures/raw_sleep.png', width = 7, height = 5)
+
+fasting_plot <- all_monthly %>%
+  ggplot(aes(x = yearmonth, y = cumul_dur_dec)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = as.numeric(ymd("2022-07-01")), 
+             color = "red", linetype = "dashed") +
+  labs(title = "Average Monthly 'Fasting Length Per Day' Over Time",
+       x = "Date",
+       y = "Hours") +
+  theme_minimal() +
+  scale_x_yearmonth(date_breaks = "6 months", date_labels = "%b %Y")
+ggsave('../exhibits/figures/raw_fasting.png', width = 7, height = 5)
+
 load('../data/cleaned/daily_fitbit.rda')
 
 #-------------------------------------------------------------------------------

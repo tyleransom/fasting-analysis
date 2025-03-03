@@ -4,7 +4,7 @@
 - Start a data export
 - Wait awhile
 - Update the appropriate JSON files
-- Update fasting CSV as appropriate
+- Update fasting CSV as appropriate (and/or download from Zero, unzip, and process the file called "biodata.json")
 
 # How to clean the data
 
