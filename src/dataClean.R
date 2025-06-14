@@ -78,12 +78,22 @@ for (f in seq(1,length(out))) {
 # import weight data
 out <- system('ls ../data/raw/user-site-export/weight*.json', intern=T)
 weight <- list()
+out <- system('ls ../data/raw/user-site-export/weight*.json', intern=T)
+weight <- list()
 for (f in seq(1,length(out))) {
-    temp <- fromJSON(out[f]) %>% as_tibble() %>% 
-            select(date,weight) %>%
-            mutate(date = mdy(date))
-    weight %<>% bind_rows(temp)
-    temp <- NULL
+  temp <- fromJSON(out[f]) %>% as_tibble()
+  
+  # Add fat column with NA if it doesn't exist
+  if (!"fat" %in% colnames(temp)) {
+    temp$fat <- NA_real_
+  }
+  
+  temp <- temp %>% 
+    select(date, weight, fat_pct = fat) %>%
+    mutate(date = mdy(date))
+  
+  weight %<>% bind_rows(temp)
+  temp <- NULL
 }
 
 # remove duplicates
@@ -166,6 +176,7 @@ df <- df %>%
   )
 
 df %<>% bind_rows(daily_fasts)
+write_csv(df,'../data/cleaned/fasts_only.csv')
 
 all %<>% left_join(df, by=c("date" = "date_began"))
 
@@ -182,6 +193,10 @@ fasting <- all
 # linearly interpolate missing weight observations
 all %<>% filter(date > as_date('2020-01-21')) %>% 
          mutate(weight = ifelse(is.na(weight), approx(x = date[!is.na(weight)], y = weight[!is.na(weight)], xout = date)$y, weight))
+
+# linearly interpolate missing fat_pct observations
+all %<>% #filter(date > as_date('2023-07-16')) %>% 
+  mutate(fat_pct = ifelse(is.na(fat_pct), approx(x = date[!is.na(fat_pct)], y = fat_pct[!is.na(fat_pct)], xout = date)$y, fat_pct))
 
 save(all,fasting,file='../data/cleaned/daily_fitbit.rda')
 
